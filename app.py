@@ -94,7 +94,7 @@ st.markdown(f"""
 st.markdown('<p class="premium-title">🎵 MEDIA PREMIUM PRO</p>', unsafe_allow_html=True)
 st.markdown('<p class="premium-sub">Hệ thống xử lý media đa nền tảng thế hệ mới</p>', unsafe_allow_html=True)
 
-# 💡 BỘ CẤU TRÚC TAB MỚI: Cực kỳ gọn gàng, bấm chọn nhanh chóng không chiếm diện tích
+# BỘ CẤU TRÚC TAB
 tab1, tab2, tab3 = st.tabs(["📥 Tải Từ Link", "🔄 Đổi Đuôi Tệp", "⚙️ Cài Đặt Website"])
 
 # --- TAB 1: TẢI TỪ LINK ---
@@ -131,8 +131,10 @@ with tab1:
                                 mime="audio/mpeg" if format_type == "mp3" else "video/mp4",
                                 key="btn_save_download"
                             )
-                        try: os.remove(filepath)
-                        except: pass
+                        try:
+                            os.remove(filepath)
+                        except:
+                            pass
 
 # --- TAB 2: ĐỔI ĐUÔI TỪ VIDEO CÓ SẴN ---
 with tab2:
@@ -156,10 +158,12 @@ with tab2:
                                 mime="audio/mpeg",
                                 key="btn_save_convert"
                             )
-                        try: os.remove(output_path)
-                        except: pass
+                        try:
+                            os.remove(output_path)
+                        except:
+                            pass
 
-# --- TAB 3: PHẦN CÀI ĐẶT WEBSITE (TÍNH NĂNG MỚI THEO YÊU CẦU) ---
+# --- TAB 3: PHẦN CÀI ĐẶT WEBSITE ---
 with tab3:
     with st.container(border=True):
         st.subheader("⚙️ Cấu Hình Website Cá Nhân")
@@ -172,7 +176,7 @@ with tab3:
         )
         if selected_theme != st.session_state["theme_color"]:
             st.session_state["theme_color"] = selected_theme
-            st.rerun() # Tải lại trang ngay lập tức để áp dụng màu mới
+            st.rerun()
         
         # 2. Cài đặt chất lượng âm thanh xuất ra
         st.session_state["audio_quality"] = st.select_slider(
@@ -185,8 +189,7 @@ with tab3:
         st.subheader("🛡️ Cấu Hình Lấy Cookie Chống Chặn Bot")
         st.write("Nếu tải link YouTube bị thông báo lỗi màu hồng (Xác minh bot), bạn làm theo bước sau để xử lý:")
         st.caption("1. Lên máy tính/điện thoại, cài tiện ích mở rộng có tên là **'Get cookies.txt LOCALLY'** trên trình duyệt.")
-         Kharên2 = "2. Đăng nhập vào trang youtube.com bằng tài khoản của bạn, bấm vào tiện ích đó rồi copy toàn bộ văn bản hiện ra."
-        st.caption(Kharên2)
+        st.caption("2. Đăng nhập vào trang youtube.com bằng tài khoản của bạn, bấm vào tiện ích đó rồi copy toàn bộ văn bản hiện ra.")
         st.caption("3. Dán toàn bộ đoạn mã đó vào ô dưới đây để website tự động giả lập tài khoản thật của bạn, vượt qua mọi sự kiểm duyệt.")
         
         cookie_input = st.text_area(
@@ -199,4 +202,4 @@ with tab3:
         if cookie_input != st.session_state["cookie_data"]:
             st.session_state["cookie_data"] = cookie_input
             st.success("✅ Hệ thống đã tiếp nhận bộ Cookies chống chặn thành công!")
-                                
+                        

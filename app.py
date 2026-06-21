@@ -1,194 +1,202 @@
 import streamlit as st
 import os
-from yt_dlp import YoutubeDL
-from moviepy.editor import VideoFileClip
+from utils import download_media, convert_mp4_to_mp3
 
-# 1. Cấu hình giao diện chuẩn Premium cho di động
 st.set_page_config(page_title="Media Pro", page_icon="🎵", layout="centered")
 
-# 2. Nhúng mã CSS để thay đổi hoàn toàn giao diện mặc định sang giao diện Cao cấp
-st.markdown("""
+# Khởi tạo bộ nhớ tạm để lưu cấu hình cài đặt của website
+if "cookie_data" not in st.session_state:
+    st.session_state["cookie_data"] = ""
+if "audio_quality" not in st.session_state:
+    st.session_state["audio_quality"] = "192"
+if "theme_color" not in st.session_state:
+    st.session_state["theme_color"] = "Tím Neon"
+
+# Bộ màu sắc chuyển đổi theo cài đặt của người dùng
+color_map = {
+    "Tím Neon": {"gradient": "linear-gradient(135deg, #ff007f 0%, #764ba2 50%, #4a00e0 100%)", "primary": "#764ba2"},
+    "Xanh Lục Bảo": {"gradient": "linear-gradient(135deg, #11998e 0%, #38ef7d 100%)", "primary": "#11998e"},
+    "Xanh Biển Sâu": {"gradient": "linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)", "primary": "#0072ff"}
+}
+current_theme = color_map[st.session_state["theme_color"]]
+
+# Nhúng CSS tối ưu bố cục rõ dòng, bo góc mượt mà, không bị to lấn chiếm màn hình
+st.markdown(f"""
 <style>
-    /* Nền ứng dụng mềm mại hơn */
-    .main {
-        background-color: #f9fbfd;
-    }
-    
-    /* Thiết kế tiêu đề Gradient chuyển màu */
-    .premium-title {
-        background: linear-gradient(135deg, #ff007f 0%, #764ba2 50%, #4a00e0 100%);
+    .main {{
+        background-color: #f8fafc;
+    }}
+    .premium-title {{
+        background: {current_theme['gradient']};
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 24pt !important;
+        font-size: 21pt !important;
         font-weight: 800 !important;
         text-align: center;
-        margin-bottom: 5px;
-    }
-    .premium-sub {
+        margin-bottom: 0px;
+    }}
+    .premium-sub {{
         text-align: center;
-        color: #6c757d;
-        font-size: 10pt;
-        margin-bottom: 25px;
+        color: #64748b;
+        font-size: 8.5pt;
+        margin-bottom: 20px;
         text-transform: uppercase;
-        letter-spacing: 1px;
-    }
+        letter-spacing: 1.5px;
+        font-weight: 600;
+    }}
     
-    /* Thiết kế các Khối tính năng (Card) rõ dòng, gọn gàng */
-    .feature-card {
+    /* Thiết kế hộp chứa (Card) gọn gàng, phân định dòng rõ ràng, mỏng nhẹ */
+    div[data-testid="stVerticalBlockBorderWrapper"] {{
+        background: white !important;
+        border: 1px solid #e2e8f0 !important;
+        border-left: 5px solid {current_theme['primary']} !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04) !important;
+        padding: 15px !important;
+        border-radius: 12px !important;
+        margin-bottom: 10px !important;
+    }}
+    
+    /* Thanh chuyển đổi tính năng (Tab) bo góc cao cấp */
+    div[data-testid="stTabBar"] {{
         background: #ffffff;
-        padding: 18px;
-        border-radius: 14px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-        margin-bottom: 20px;
-        border-left: 5px solid #764ba2; /* Vạch kẻ tím sang trọng định hình dòng */
-    }
+        border-radius: 10px;
+        padding: 2px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }}
     
-    .feature-card-2 {
-        background: #ffffff;
-        padding: 18px;
-        border-radius: 14px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-        margin-bottom: 20px;
-        border-left: 5px solid #ff007f; /* Vạch kẻ hồng trẻ trung */
-    }
-    
-    /* Giao diện nút bấm chức năng (Xử lý) màu Gradient Tím-Xanh */
-    div.stButton > button:first-child {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    /* Nút bấm chức năng */
+    div.stButton > button:first-child {{
+        background: {current_theme['gradient']} !important;
         color: white !important;
         border: none !important;
         padding: 10px 20px !important;
         border-radius: 10px !important;
-        font-weight: bold !important;
+        font-weight: 700 !important;
         font-size: 11pt !important;
         width: 100% !important;
-        box-shadow: 0 4px 10px rgba(118, 75, 162, 0.3) !important;
-        transition: all 0.3s ease !important;
-    }
-    div.stButton > button:first-child:active {
-        transform: scale(0.98) !important;
-    }
+    }}
     
-    /* Giao diện nút TẢI FILE VỀ MÁY màu Xanh Lá cực nổi bật */
-    div.stDownloadButton > button:first-child {
+    /* Nút lưu tệp màu xanh nổi bật */
+    div.stDownloadButton > button:first-child {{
         background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
         color: white !important;
         border: none !important;
         padding: 12px 20px !important;
         border-radius: 10px !important;
-        font-weight: bold !important;
-        font-size: 12pt !important;
+        font-weight: 700 !important;
+        font-size: 11pt !important;
         width: 100% !important;
-        box-shadow: 0 4px 12px rgba(56, 239, 125, 0.4) !important;
-        animation: pulse 2s infinite;
-    }
-    
-    /* Giới hạn kích thước các ô nhập liệu cho vừa vặn màn hình điện thoại */
-    .stTextInput > div > div > input {
-        border-radius: 8px !important;
-        border: 1px solid #e0e0e0 !important;
-    }
+        box-shadow: 0 4px 12px rgba(56, 239, 125, 0.2) !important;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
-# 3. Phần nội dung hiển thị ứng dụng
-st.markdown('<p class="premium-title">🎵 MEDIA PREMIUM</p>', unsafe_allow_html=True)
-st.markdown('<p class="premium-sub">Hệ thống tải nhạc & Đổi đuôi cá nhân</p>', unsafe_allow_html=True)
+st.markdown('<p class="premium-title">🎵 MEDIA PREMIUM PRO</p>', unsafe_allow_html=True)
+st.markdown('<p class="premium-sub">Hệ thống xử lý media đa nền tảng thế hệ mới</p>', unsafe_allow_html=True)
 
-SAVE_DIR = "downloads"
-if not os.path.exists(SAVE_DIR):
-    os.makedirs(SAVE_DIR)
+# 💡 BỘ CẤU TRÚC TAB MỚI: Cực kỳ gọn gàng, bấm chọn nhanh chóng không chiếm diện tích
+tab1, tab2, tab3 = st.tabs(["📥 Tải Từ Link", "🔄 Đổi Đuôi Tệp", "⚙️ Cài Đặt Website"])
 
-# --- KHỐI 1: TẢI TỪ LINK ---
-st.markdown('<div class="feature-card">', unsafe_allow_html=True)
-st.subheader("⚡ Tải nhạc & Video từ Link")
-
-url = st.text_input("Dán link (YouTube, TikTok, FB...) vào đây:", placeholder="https://...")
-format_type = st.radio("Chọn định dạng đầu ra:", ("Tải MP3 (Chỉ lấy nhạc)", "Tải MP4 (Video đầy đủ)"))
-
-if st.button("🚀 Bắt Đầu Xử Lý Link"):
-    if not url:
-        st.warning("Vui lòng dán đường link vào trước!")
-    else:
-        with st.spinner("Đang tải dữ liệu từ máy chủ..."):
-            try:
-                outtmpl = os.path.join(SAVE_DIR, '%(title)s.%(ext)s')
-                ydl_opts = {
-                    'outtmpl': outtmpl,
-                    'extractor_args': {'youtube': {'player_client': ['ios', 'android', 'mweb']}},
-                    'http_headers': {
-                        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1'
-                    },
-                    'nocheckcertificate': True
-                }
-                
-                if format_type == "Tải MP3 (Chỉ lấy nhạc)":
-                    ydl_opts.update({
-                        'format': 'bestaudio/best',
-                        'postprocessors': [{
-                            'key': 'FFmpegExtractAudio',
-                            'preferredcodec': 'mp3',
-                            'preferredquality': '192',
-                        }],
-                    })
-                else:
-                    ydl_opts.update({
-                        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-                    })
-                    
-                with YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(url, download=True)
-                    filename = ydl.prepare_filename(info)
-                    
-                    if format_type == "Tải MP3 (Chỉ lấy nhạc)":
-                        filename = os.path.splitext(filename)[0] + '.mp3'
-                    
-                    with open(filename, "rb") as f:
-                        st.success("🎉 Hoàn thành xuất sắc!")
-                        st.download_button(
-                            label="📥 LƯU FILE VỀ ĐIỆN THOẠI NGAY",
-                            data=f,
-                            file_name=os.path.basename(filename),
-                            mime="audio/mpeg" if format_type == "Tải MP3 (Chỉ lấy nhạc)" else "video/mp4"
-                        )
-            except Exception as e:
-                st.error(f"Lỗi: {str(e)}")
-st.markdown('</div>', unsafe_allow_html=True) # Đóng khối 1
-
-
-# --- KHỐI 2: ĐỔI ĐUÔI MP4 SANG MP3 ---
-st.markdown('<div class="feature-card-2">', unsafe_allow_html=True)
-st.subheader("🔄 Bộ chuyển đổi MP4 sang MP3")
-
-uploaded_file = st.file_uploader("Chọn video từ máy của bạn:", type=["mp4"])
-
-if uploaded_file is not None:
-    if st.button("🎵 Tiến Hành Tách Nhạc"):
-        with st.spinner("Đang tách âm thanh, vui lòng đợi..."):
-            try:
-                input_path = os.path.join(SAVE_DIR, uploaded_file.name)
-                with open(input_path, "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-                
-                output_filename = os.path.splitext(uploaded_file.name)[0] + ".mp3"
-                output_path = os.path.join(SAVE_DIR, output_filename)
-                
-                video = VideoFileClip(input_path)
-                video.audio.write_audiofile(output_path)
-                video.close()
-                
-                with open(output_path, "rb") as f:
-                    st.success("🎉 Tách nhạc thành công!")
-                    st.download_button(
-                        label="📥 LƯU FILE MP3 VỀ MÁY",
-                        data=f,
-                        file_name=output_filename,
-                        mime="audio/mpeg"
+# --- TAB 1: TẢI TỪ LINK ---
+with tab1:
+    with st.container(border=True):
+        st.subheader("⚡ Tải nhạc & Video từ Link")
+        url = st.text_input("Dán link (YouTube, TikTok, FB...):", placeholder="https://...", key="input_url")
+        choice = st.radio("Định dạng xuất ra:", ("Tải nhạc MP3", "Tải video MP4"), key="input_format")
+        
+        format_type = "mp3" if choice == "Tải nhạc MP3" else "mp4"
+        
+        if st.button("🚀 Kích Hoạt Tải", key="btn_download"):
+            if not url:
+                st.warning("Vui lòng dán đường link vào trước!")
+            else:
+                with st.spinner("Đang định tuyến luồng tải không dấu..."):
+                    filepath, error = download_media(
+                        url=url,
+                        format_type=format_type,
+                        cookie_text=st.session_state["cookie_data"],
+                        audio_quality=st.session_state["audio_quality"]
                     )
-                
-                os.remove(input_path)
-                os.remove(output_path)
-                
-            except Exception as e:
-                st.error(f"Lỗi chuyển đổi: {str(e)}")
-st.markdown('</div>', unsafe_allow_html
+                    if error:
+                        st.error(f"Lỗi hệ thống: {error}")
+                        if "Sign in to confirm you're not a bot" in error:
+                            st.info("💡 **Mẹo chống chặn:** YouTube quét máy chủ rất gắt. Hãy qua tab **'Cài Đặt Website'** dán Cookies tài khoản của bạn để mở khóa tải 100% nhé!")
+                    else:
+                        st.success("🎉 Đã xử lý tệp hoàn tất!")
+                        with open(filepath, "rb") as f:
+                            st.download_button(
+                                label="📥 LƯU FILE VỀ ĐIỆN THOẠI",
+                                data=f,
+                                file_name=os.path.basename(filepath),
+                                mime="audio/mpeg" if format_type == "mp3" else "video/mp4",
+                                key="btn_save_download"
+                            )
+                        try: os.remove(filepath)
+                        except: pass
+
+# --- TAB 2: ĐỔI ĐUÔI TỪ VIDEO CÓ SẴN ---
+with tab2:
+    with st.container(border=True):
+        st.subheader("🔄 Trích Xuất Âm Thanh Từ Máy")
+        uploaded_file = st.file_uploader("Tải tệp video MP4 từ máy của bạn lên:", type=["mp4"], key="file_extractor")
+        
+        if uploaded_file is not None:
+            if st.button("🎵 Tiến Hành Tách Nhạc", key="btn_convert"):
+                with st.spinner("Đang trích xuất tần số âm thanh kỹ thuật số..."):
+                    output_path, error = convert_mp4_to_mp3(uploaded_file)
+                    if error:
+                        st.error(f"Lỗi chuyển đổi: {error}")
+                    else:
+                        st.success("🎉 Trích xuất nhạc thành công!")
+                        with open(output_path, "rb") as f:
+                            st.download_button(
+                                label="📥 LƯU FILE MP3 VỀ MÁY",
+                                data=f,
+                                file_name=os.path.basename(output_path),
+                                mime="audio/mpeg",
+                                key="btn_save_convert"
+                            )
+                        try: os.remove(output_path)
+                        except: pass
+
+# --- TAB 3: PHẦN CÀI ĐẶT WEBSITE (TÍNH NĂNG MỚI THEO YÊU CẦU) ---
+with tab3:
+    with st.container(border=True):
+        st.subheader("⚙️ Cấu Hình Website Cá Nhân")
+        
+        # 1. Cài đặt thay đổi màu chủ đề giao diện trực tiếp
+        selected_theme = st.selectbox(
+            "Thay đổi tone màu giao diện (Theme):", 
+            options=["Tím Neon", "Xanh Lục Bảo", "Xanh Biển Sâu"],
+            index=["Tím Neon", "Xanh Lục Bảo", "Xanh Biển Sâu"].index(st.session_state["theme_color"])
+        )
+        if selected_theme != st.session_state["theme_color"]:
+            st.session_state["theme_color"] = selected_theme
+            st.rerun() # Tải lại trang ngay lập tức để áp dụng màu mới
+        
+        # 2. Cài đặt chất lượng âm thanh xuất ra
+        st.session_state["audio_quality"] = st.select_slider(
+            "Tùy chỉnh chất lượng nhạc MP3 tải về (kbps):",
+            options=["128", "192", "256", "320"],
+            value=st.session_state["audio_quality"]
+        )
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.subheader("🛡️ Cấu Hình Lấy Cookie Chống Chặn Bot")
+        st.write("Nếu tải link YouTube bị thông báo lỗi màu hồng (Xác minh bot), bạn làm theo bước sau để xử lý:")
+        st.caption("1. Lên máy tính/điện thoại, cài tiện ích mở rộng có tên là **'Get cookies.txt LOCALLY'** trên trình duyệt.")
+         Kharên2 = "2. Đăng nhập vào trang youtube.com bằng tài khoản của bạn, bấm vào tiện ích đó rồi copy toàn bộ văn bản hiện ra."
+        st.caption(Kharên2)
+        st.caption("3. Dán toàn bộ đoạn mã đó vào ô dưới đây để website tự động giả lập tài khoản thật của bạn, vượt qua mọi sự kiểm duyệt.")
+        
+        cookie_input = st.text_area(
+            "Dán nội dung Netscape Cookies vào đây:",
+            value=st.session_state["cookie_data"],
+            placeholder="# Netscape HTTP Cookie File...",
+            height=120,
+            key="cookie_textarea"
+        )
+        if cookie_input != st.session_state["cookie_data"]:
+            st.session_state["cookie_data"] = cookie_input
+            st.success("✅ Hệ thống đã tiếp nhận bộ Cookies chống chặn thành công!")
+                                

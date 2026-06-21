@@ -26,7 +26,20 @@ if st.button("🚀 Bắt Đầu Tải Từ Link"):
         with st.spinner("Hệ thống đang tải và xử lý dữ liệu, vui lòng đợi..."):
             try:
                 outtmpl = os.path.join(SAVE_DIR, '%(title)s.%(ext)s')
-                ydl_opts = {'outtmpl': outtmpl}
+                
+                # Cấu hình nâng cao giả lập thiết bị iOS/Android để qua mặt bộ chặn bot của YouTube
+                ydl_opts = {
+                    'outtmpl': outtmpl,
+                    'extractor_args': {
+                        'youtube': {
+                            'player_client': ['ios', 'android', 'mweb']
+                        }
+                    },
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1'
+                    },
+                    'nocheckcertificate': True
+                }
                 
                 if format_type == "Tải MP3 (Chỉ lấy nhạc)":
                     ydl_opts.update({
@@ -95,4 +108,3 @@ if uploaded_file is not None:
                 
             except Exception as e:
                 st.error(f"Lỗi chuyển đổi: {str(e)}")
-                  

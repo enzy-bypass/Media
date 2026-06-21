@@ -191,4 +191,4 @@ if uploaded_file is not None:
                 
             except Exception as e:
                 st.error(f"Lỗi chuyển đổi: {str(e)}")
-st.markdown('</div>', unsafe_allow_html=True) # Đóng khối 2
+st.markdown('</div>', unsafe_allow_html

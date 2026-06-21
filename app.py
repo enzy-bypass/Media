@@ -1,4 +1,4 @@
-streamlit as st
+import streamlit as st
 import pandas as pd
 
 # Cấu hình trang hiển thị rộng rãi, tối ưu cho giao diện Wiki game

@@ -1,4 +1,4 @@
-import streamlit as st
+streamlit as st
 import pandas as pd
 
 # Cấu hình trang hiển thị rộng rãi, tối ưu cho giao diện Wiki game
@@ -346,3 +346,238 @@ elif menu == "🧮 Máy Tính Định Giá Giao Dịch (Trade)":
         
     with col_trade2:
   
+import streamlit as st
+import pandas as pd
+
+# Cấu hình giao diện Wiki rộng rãi, chuẩn Gaming
+st.set_page_config(
+    page_title="Blox Fruits Grand Wiki",
+    page_icon="🍇",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# --- CƠ SỞ DỮ LIỆU TRÁI ÁC QUỶ MỚI NHẤT ---
+FRUIT_DATA = [
+    # MYTHICAL (THẦN THOẠI)
+    {"name": "Kitsune", "rarity": "Mythical", "type": "Beast", "price_beli": 8000000, "price_robux": 2300, "spawn_chance": "0.05%", "stock_chance": "1%", "tier": "SS", "description": "Trái đắt nhất game. Tốc độ chạy cực nhanh, sát thương diện rộng và có thanh nội năng biến hình Hồ Ly 9 đuôi."},
+    {"name": "Dragon (Rework)", "rarity": "Mythical", "type": "Beast", "price_beli": 10000000, "price_robux": 2600, "spawn_chance": "0.07%", "stock_chance": "1%", "tier": "SS", "description": "Tâm điểm làm lại toàn diện. Sát thương thiêu đốt bá đạo và khả năng hóa Rồng khổng lồ tăng phòng thủ."},
+    {"name": "Leopard", "rarity": "Mythical", "type": "Beast", "price_beli": 5000000, "price_robux": 3000, "spawn_chance": "0.25%", "stock_chance": "1.4%", "tier": "S", "description": "Vua vả đòn tốc độ cao, không thể bị phá chiêu (Unbreakable) khi đang combo pvp."},
+    {"name": "Dough", "rarity": "Mythical", "type": "Elemental", "price_beli": 2800000, "price_robux": 2400, "spawn_chance": "1.34%", "stock_chance": "1.4%", "tier": "S (V2)", "description": "Bá chủ Combo PvP khi thức tỉnh V2. Khả năng trói chân và kéo kéo đối thủ cực kỳ khó chịu."},
+    {"name": "T-Rex", "rarity": "Mythical", "type": "Beast", "price_beli": 2700000, "price_robux": 2350, "spawn_chance": "0.3%", "stock_chance": "2%", "tier": "S", "description": "Hóa khủng long bạo chúa, có cơ chế cào cấu gây sát thương theo thời gian (DoT) và gầm rú làm choáng."},
+    {"name": "Mammoth", "rarity": "Mythical", "type": "Beast", "price_beli": 2700000, "price_robux": 2350, "spawn_chance": "0.3%", "stock_chance": "2%", "tier": "A", "description": "Hóa voi ma mút, có chiêu húc liên tục cực trâu bò, chuyên dùng để càn quét Boss Raid."},
+    
+    # LEGENDARY (HUYỀN THOẠI)
+    {"name": "Buddha", "rarity": "Legendary", "type": "Beast", "price_beli": 1200000, "price_robux": 1650, "spawn_chance": "6.6%", "stock_chance": "5%", "tier": "SS (Farm)", "description": "Vua cày cấp (Farm level) từ Sea 1 đến Sea 3. Biến khổng lồ tăng 800% tầm đánh cận chiến và giảm 50% sát thương nhận vào."},
+    {"name": "Portal", "rarity": "Legendary", "type": "Natural", "price_beli": 1900000, "price_robux": 2000, "spawn_chance": "3.5%", "stock_chance": "4%", "tier": "S (Di Chuyển)", "description": "Trái cổng không gian, giúp dịch chuyển tức thời mọi đảo và đưa đối thủ vào chiều không gian hư vô để tạo đột biến."},
+    {"name": "Rumble", "rarity": "Legendary", "type": "Elemental", "price_beli": 2100000, "price_robux": 2100, "spawn_chance": "2.25%", "stock_chance": "4%", "tier": "A", "description": "Trái sấm sét, cho phép lướt nhanh 3 lần liên tiếp và tạo các cột sét làm choáng diện rộng cực lâu."},
+    
+    # RARE (HIẾM)
+    {"name": "Magma", "rarity": "Rare", "type": "Elemental", "price_beli": 850000, "price_robux": 1300, "spawn_chance": "7.2%", "stock_chance": "10%", "tier": "S (Săn Sea)", "description": "Sát thương thô cao nhất trò chơi khi thức tỉnh V2. Có khả năng đi bộ trên mặt nước, khắc tinh số 1 của Sea Beast."},
+    {"name": "Light", "rarity": "Rare", "type": "Elemental", "price_beli": 650000, "price_robux": 1100, "spawn_chance": "9.1%", "stock_chance": "20%", "tier": "A (Sea 1)", "description": "Trái tốt nhất cho tân thủ Sea 1 nhờ tốc độ bay nhanh nhất game và có kiếm ánh sáng để đánh lan."}
+]
+
+# --- TÙY BIẾN CSS ĐỂ WEBSITE ĐẸP NHƯ WIKI CHUYÊN NGHIỆP ---
+st.markdown("""
+<style>
+    .stApp { background-color: #0b0f19; color: #e2e8f0; }
+    section[data-testid="stSidebar"] { background-color: #111827 !important; border-right: 1px solid #1f2937; }
+    .main-title {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        font-size: 34pt !important; font-weight: 900; text-align: center; margin-bottom: 0px;
+    }
+    .sub-title { text-align: center; color: #94a3b8; font-size: 11pt; margin-bottom: 30px; }
+    .card { background: #1f2937; padding: 15px; border-radius: 10px; border: 1px solid #374151; margin-bottom: 12px; }
+    .styled-table { width: 100%; border-collapse: collapse; margin: 10px 0; background-color: #111827; border-radius: 8px; overflow: hidden; }
+    .styled-table th { background-color: #1f2937; color: #f59e0b; text-align: left; padding: 10px; }
+    .styled-table td { padding: 10px; border-bottom: 1px solid #374151; }
+</style>
+""", unsafe_allow_html=True)
+
+# --- TIÊU ĐỀ TRANG CHỦ ---
+st.markdown('<p class="main-title">⚔️ BLOX FRUITS WIKI A-Z ⚔️</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-title">Hệ thống tra cứu dữ liệu Trái Ác Quỷ, Tỷ lệ Spawn & Cơ chế Game mới nhất hiện tại</p>', unsafe_allow_html=True)
+
+# --- THANH DIỀU HƯỚNG SIDEBAR (BỐ CỤC RÕ RÀNG) ---
+st.sidebar.markdown("<h2 style='color:#f59e0b; text-align:center;'>🧭 MỤC LỤC TRA CỨU</h2>", unsafe_allow_html=True)
+menu = st.sidebar.radio(
+    "Chọn nội dung bạn cần xem:",
+    [
+        "🔥 Tin Tức & Cập Nhật Mới Nhất",
+        "🍇 Thư Viện Toàn Bộ Trái Ác Quỷ",
+        "🌲 Tỷ Lệ Spawn Trái Tự Nhiên",
+        "⚔️ Bảng Xếp Hạng Sức Mạnh (Tier List)",
+        "🧮 Máy Tính Định Giá Trade Trái"
+    ]
+)
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📊 Thông tin phiên bản")
+st.sidebar.info("• Phiên bản: **Update 21 / 22 Rework**\n• Dữ liệu: **Chuẩn chuẩn 100%**\n• Trạng thái hệ thống: 🟢 Sẵn sàng")
+
+# ======================================================================================================================
+# DANH MỤC 1: TIN TỨC MỚI NHẤT
+# ======================================================================================================================
+if menu == "🔥 Tin Tức & Cập Nhật Mới Nhất":
+    st.header("📣 Tin tức tiêu điểm hiện tại")
+    st.markdown("""
+    <div class='card' style='border-left: 5px solid #ef4444;'>
+        <h3 style='color:#f59e0b; margin-top:0;'>✨ Sự kiện Dragon Rework & Trái Ác Quỷ Mới</h3>
+        <p>Bản cập nhật mới nhất tập trung vào việc làm lại hoàn toàn bộ kỹ năng của <b>Trái Dragon (Rồng)</b> với hiệu ứng đồ họa bùng nổ, biến hình cực ngầu và bổ sung thêm các cơ chế pvp tối thượng. Trái <b>Kitsune</b> vẫn giữ ngôi vương về độ đắt đỏ và toàn diện.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.subheader("🗺️ Hành trình vượt Đại Dương (Dành cho Tân thủ)")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown("<div class='card'><h4>🌊 Sea 1 (Biển Cũ)</h4><p>Tập trung cày cấp bằng trái <b>Light</b>. Hãy mua thuyền đi làm nhiệm vụ theo đúng cấp độ cấp bậc ở các đảo.</p></div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<div class='card'><h4>🌋 Sea 2 (Tân Thế Giới)</h4><p>Chuyển sang dùng trái <b>Buddha V2</b> để đi Raid. Mở khóa tính năng Trade trái ác quỷ tại quán Cafe.</p></div>", unsafe_allow_html=True)
+    with col3:
+        st.markdown("<div class='card'><h4>🌌 Sea 3 (Biển Cuối)</h4><p>Tham gia săn Sea Events, săn Boss Leviathan lấy nguyên liệu chế tạo và tối ưu hóa điểm Bounty PvP.</p></div>", unsafe_allow_html=True)
+
+# ======================================================================================================================
+# DANH MỤC 2: THƯ VIỆN TOÀN BỘ TRÁI ÁC QUỶ (CLICK CHUẨN TƯƠNG TÁC)
+# ======================================================================================================================
+elif menu == "🍇 Thư Viện Toàn Bộ Trái Ác Quỷ":
+    st.header("🍇 Từ Điển Tra Cứu Trái Ác Quỷ Tương Tác")
+    st.write("Dưới đây là danh sách đầy đủ. Bạn hãy gõ tìm kiếm hoặc bấm click vào từng trái để mở bung thông tin chi tiết kỹ năng bên dưới!")
+    
+    # Thanh tìm kiếm thông minh
+    search_fruit = st.text_input("🔍 Nhập tên trái cần tra cứu nhanh (Ví dụ: Kitsune, Buddha...):", placeholder="Gõ tên trái vào đây...")
+    
+    # Lọc dữ liệu theo từ khóa nhập
+    filtered_list = [f for f in FRUIT_DATA if search_fruit.lower() in f["name"].lower()]
+    
+    for fruit in filtered_list:
+        # Click để mở rộng chi tiết (Expander tương tác)
+        with st.expander(f"⭐ Trái {fruit['name']} ({fruit['rarity']} — Hệ {fruit['type']})"):
+            st.markdown(f"""
+            <div style='background-color: #111827; padding: 15px; border-radius: 8px;'>
+                <p><b>📝 Mô tả sức mạnh:</b> {fruit['description']}</p>
+                <table class='styled-table'>
+                    <tr>
+                        <th>💵 Giá Tiền (Beli)</th>
+                        <th>💎 Giá Mua (Robux)</th>
+                        <th>🌲 Tỷ lệ nhặt dưới cây</th>
+                        <th>🏪 Tỷ lệ bán ở Shop</th>
+                        <th>🏆 Xếp hạng sức mạnh</th>
+                    </tr>
+                    <tr>
+                        <td style='color:#4ade80;'>{fruit['price_beli']:,} Beli</td>
+                        <td style='color:#60a5fa;'>{fruit['price_robux']} Robux</td>
+                        <td>{fruit['spawn_chance']}</td>
+                        <td>{fruit['stock_chance']}</td>
+                        <td style='color:#f59e0b; font-weight:bold;'>Tier {fruit['tier']}</td>
+                    </tr>
+                </table>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # NÚT BẤM INTERACTIVE - TƯƠNG TÁC CLICK PHÍM CHIÊU THỨC GIẢ LẬP
+            st.write("🎮 **Click để TEST thử chiêu thức (Demo Moveset):**")
+            b1, b2, b3, b4 = st.columns(4)
+            with b1:
+                if st.button(f"Chiêu [Z] của {fruit['name']}", key=f"z_{fruit['name']}"):
+                    st.toast(f"💥 {fruit['name']} kích hoạt chiêu Z: Gây sát thương tầm gần, phá Haki quan sát!", icon="⚡")
+            with b2:
+                if st.button(f"Chiêu [X] của {fruit['name']}", key=f"x_{fruit['name']}"):
+                    st.toast(f"☄️ {fruit['name']} kích hoạt chiêu X: Chiêu định hướng tầm xa diện rộng cực đau!", icon="🔥")
+            with b3:
+                if st.button(f"Chiêu [C] của {fruit['name']}", key=f"c_{fruit['name']}"):
+                    st.toast(f"🌪️ {fruit['name']} kích hoạt chiêu C: Khống chế cứng đối thủ tụ lại một chỗ!", icon="🔮")
+            with b4:
+                if st.button(f"KÍCH HOẠT CHIÊU CUỐI [V]", key=f"v_{fruit['name']}"):
+                    st.balloons() # Hiệu ứng pháo hoa bóng bay khi bấm chiêu cuối
+                    st.success(f"👑 BẠN ĐÃ GIẢI PHÓNG SỨC MẠNH TỐI THƯỢNG CỦA TRÁI {fruit['name']}! QUÉT SẠCH SERVER!")
+
+# ======================================================================================================================
+# DANH MỤC 3: TỶ LỆ SPAWN TRÁI ÁC QUỶ
+# ======================================================================================================================
+elif menu == "🌲 Tỷ Lệ Spawn Trái Tự Nhiên":
+    st.header("🌲 Cơ chế xuất hiện Trái ác quỷ tự nhiên dưới gốc cây")
+    
+    sc1, sc2 = st.columns(2)
+    with sc1:
+        st.markdown("""
+        <div class='card' style='border-left: 5px solid #fbbf24;'>
+            <h4 style='color:#fbbf24; margin-top:0;'>⏰ Thời gian Spawn chuẩn</h4>
+            <p>• <b>Ngày trong tuần (Thứ 2 đến Thứ 6):</b> Cứ mỗi <b>1 tiếng (60 phút)</b> hệ thống sẽ tự động tạo ra 1 trái ngẫu nhiên dưới gốc cây bất kỳ trên bản đồ.</p>
+            <p>• <b>Ngày cuối tuần (Thứ 7 và Chủ Nhật):</b> Thời gian rút ngắn xuống còn <b>45 phút</b> một trái.</p>
+            <p>• <b>Cơ chế biến mất (Despawn):</b> Nếu không có ai tìm thấy và nhặt, trái ác quỷ sẽ tự động biến mất sau đúng <b>20 phút</b> kể từ lúc xuất hiện.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    with sc2:
+        st.markdown("""
+        <div class='card' style='border-left: 5px solid #10b981;'>
+            <h4 style='color:#10b981; margin-top:0;'>💡 Mẹo săn trái cực nhanh</h4>
+            <p>1. <b>Mua Gamepass Fruit Notifier:</b> Bản đồ sẽ tự động hiện thông báo khoảng cách (ví dụ: 1200m) dẫn thẳng tới gốc cây có trái ác quỷ.</p>
+            <p>2. <b>Săn tại Server VIP (Private Server):</b> Một mình bạn một server sẽ không sợ bị các người chơi khác hoặc hacker bay nhặt mất.</p>
+            <p>3. <b>Canh Server Mới:</b> Khi một server mới tinh vừa khởi chạy, hệ thống luôn sinh ra sẵn một trái ác quỷ ngay lập tức.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    st.subheader("📊 Bảng thống kê tỷ lệ phân phối theo độ hiếm")
+    spawn_data = {
+        "Độ Hiếm Trái": ["Common (Thường)", "Uncommon (Không phổ biến)", "Rare (Hiếm)", "Legendary (Huyền thoại)", "Mythical (Thần thoại)"],
+        "Tỷ Lệ Xuất Hiện Tự Nhiên": ["~ 50%", "~ 30%", "~ 12% đến 15%", "~ 5% đến 7%", "Dưới 1% (Cực kỳ hiếm)"],
+        "Trái Tiêu Biểu": ["Rocket, Spin, Chop", "Flame, Ice, Sand", "Light, Magma, Ghost", "Buddha, Portal, Rumble", "Kitsune, Dragon, Dough, T-Rex"]
+    }
+    st.table(pd.DataFrame(spawn_data))
+
+# ======================================================================================================================
+# DANH MỤC 4: BẢNG XẾP HẠNG TIER LIST
+# ======================================================================================================================
+elif menu == "⚔️ Bảng Xếp Hạng Sức Mạnh (Tier List)":
+    st.header("⚔️ Bảng Xếp Hạng Trái Ác Quỷ Toàn Diện")
+    st.write("Bảng xếp hạng dựa trên meta thực tế mới nhất từ các game thủ chuyên nghiệp.")
+    
+    t1, t2 = st.tabs(["🔥 Chuyên đi PvP / Săn Bounty", "🌾 Chuyên đi Treo Máy Cày Cấp (Farm Level)"])
+    
+    with t1:
+        st.markdown("""
+        <div class='card'><b>Tier SS (Bá chủ):</b> Kitsune, Dragon, Dough V2, Leopard.<br><span style='color:#94a3b8;'>→ Ưu điểm: Bộ chiêu thức sát thương khủng, dễ trúng, phá giáp chân đối phương, rất khó bị khắc chế.</span></div>
+        <div class='card'><b>Tier A (Tốt):</b> Portal, Rumble, T-Rex, Ice V2.<br><span style='color:#94a3b8;'>→ Ưu điểm: Đòi hỏi kỹ năng combo căn phím tay nhanh, kết hợp linh hoạt giữa Kiếm và Súng.</span></div>
+        """, unsafe_allow_html=True)
+        
+    with t2:
+        st.markdown("""
+        <div class='card' style='border-left: 5px solid #10b981;'><b>HẠNG 1 TUYỆT ĐỐI: Buddha (Phật Tổ Thức Tỉnh)</b><br><span style='color:#94a3b8;'>→ Ưu điểm: Đứng im một chỗ bật nút biến khổng lồ lên rồi bấm chuột click vả liên thanh, quét sạch quái đảo cực kỳ an toàn và nhanh chóng. Không có trái nào thay thế được.</span></div>
+        <div class='card'><b>HẠNG 2: Magma V2, Light, Blizzard</b><br><span style='color:#94a3b8;'>→ Ưu điểm: Có nhiều chiêu thức đánh lan diện rộng (AoE), gom quái nhanh mà không làm đẩy quái ra xa.</span></div>
+        """, unsafe_allow_html=True)
+
+# ======================================================================================================================
+# DANH MỤC 5: MÁY TÍNH GIAO DỊCH (TRADE CALCULATOR)
+# ======================================================================================================================
+elif menu == "🧮 Máy Tính Định Giá Trade Trái":
+    st.header("🧮 Trình máy tính kiểm tra biên độ giá Giao dịch (Trade)")
+    st.write("Trong Blox Fruits, bạn không được phép giao dịch hai bên lệch nhau quá **40% giá trị tiền mặt sàn**. Hãy nhập thử để kiểm tra hệ thống!")
+    
+    c_left, c_right = st.columns(2)
+    with c_left:
+        st.subheader("🛒 Phía Trái Của Bạn")
+        my_choice = st.selectbox("Bạn bỏ trái gì vào bàn cân:", [f["name"] for f in FRUIT_DATA], key="my_f")
+        my_qty = st.number_input("Số lượng (1-4):", min_value=1, max_value=4, value=1, key="my_q")
+        my_total = next(f["price_beli"] for f in FRUIT_DATA if f["name"] == my_choice) * my_qty
+        st.metric("Tổng giá trị Beli sàn của bạn:", f"{my_total:,} Beli")
+        
+    with c_right:
+        st.subheader("🤝 Phía Trái Đối Phương")
+        their_choice = st.selectbox("Đối phương bỏ trái gì vào đổi:", [f["name"] for f in FRUIT_DATA], key="th_f")
+        their_qty = st.number_input("Số lượng (1-4):", min_value=1, max_value=4, value=1, key="th_q")
+        their_total = next(f["price_beli"] for f in FRUIT_DATA if f["name"] == their_choice) * their_qty
+        st.metric("Tổng giá trị Beli sàn đối phương:", f"{their_total:,} Beli")
+        
+    st.markdown("---")
+    st.subheader("⚖️ Kết quả kiểm tra từ Thẩm định viên Wiki")
+    
+    # Tính toán phần trăm chênh lệch
+    diff = abs(my_total - their_total)
+    max_val = max(my_total, their_total)
+    percent = (diff / max_val) * 100
+    
+    if percent > 40:
+        st.error(f"❌ KHÔNG HỢP LỆ: Hai bên đang chênh lệch giá sàn lên tới {percent:.1f}%. Hệ thống game Blox Fruits sẽ chặn nút CONFIRM và KHÔNG cho bạn trade kèo này!")
+    else:
+        st.success(f"✅ HỢP LỆ: Mức độ chênh lệch chỉ {percent:.1f}% (Nằm trong biên độ cho phép < 40%). Bạn hoàn toàn có thể bấm xác nhận giao dịch trong game.")
